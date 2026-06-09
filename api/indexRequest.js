@@ -1,9 +1,9 @@
 import { getServerUrl } from '../utils/function.js';
 import { requestJson } from '../utils/request.js';
 
-export const getPosts = (offset, limit) => {
+export const getPosts = (cursor = 0, size = 10) => {
     const result = requestJson(
-        `${getServerUrl()}/v1/posts?offset=${offset}&limit=${limit}`,
+        `${getServerUrl()}/posts?cursor=${cursor}&size=${size}`,
         {
             credentials: 'include',
         },

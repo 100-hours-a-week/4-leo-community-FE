@@ -22,7 +22,7 @@ const signupData = {
     email: '',
     password: '',
     nickname: '',
-    profileImageUrl: undefined,
+    profile_image_url: undefined,
 };
 
 const getSignupData = () => {
@@ -37,8 +37,8 @@ const getSignupData = () => {
 
 const sendSignupData = async () => {
     const { passwordCheck, ...props } = signupData;
-    if (localStorage.getItem('profileImageUrl')) {
-        props.profileImageUrl = localStorage.getItem('profileImageUrl');
+    if (localStorage.getItem('profile_image_url')) {
+        props.profile_image_url = localStorage.getItem('profile_image_url');
     }
 
     if (props.password > MAX_PASSWORD_LENGTH) {
@@ -50,7 +50,7 @@ const sendSignupData = async () => {
 
     // 응답이 성공적으로 왔을 경우
     if (status === HTTP_CREATED) {
-        localStorage.removeItem('profileImageUrl');
+        localStorage.removeItem('profile_image_url');
         location.href = '/html/login.html';
     } else {
         if (code === 'ALREADY_EXIST_EMAIL') {
@@ -62,7 +62,7 @@ const sendSignupData = async () => {
         } else {
             Dialog('회원 가입 실패', '잠시 뒤 다시 시도해 주세요', () => {});
         }
-        localStorage.removeItem('profileImageUrl');
+        localStorage.removeItem('profile_image_url');
         location.href = '/html/signup.html';
     }
 };
@@ -241,15 +241,15 @@ const uploadProfileImage = () => {
             }
 
             const formData = new FormData();
-            formData.append('profileImage', file);
+            formData.append('image', file);
 
             // 파일 업로드를 위한 POST 요청 실행
             try {
                 const { ok, data } = await fileUpload(formData);
                 if (!ok) throw new Error('서버 응답 오류');
                 localStorage.setItem(
-                    'profileImageUrl',
-                    data.profileImageUrl,
+                    'profile_image_url',
+                    data.image_url,
                 );
             } catch (error) {
                 console.error('업로드 중 오류 발생:', error);

@@ -17,7 +17,8 @@ export const requestJson = async (url, options = {}) => {
         response,
         ok: response.ok,
         status: response.status,
-        code: body && body.code ? body.code : null,
+        code: body && (body.code || body.message) ? (body.code || body.message) : null,
+        message: body && body.message ? body.message : null,
         data: body && Object.prototype.hasOwnProperty.call(body, 'data')
             ? body.data
             : null,

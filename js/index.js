@@ -12,7 +12,7 @@ const ITEMS_PER_LOAD = 5;
 const DEFAULT_SORT = 'recent';
 let currentKeyword = '';
 let currentSort = DEFAULT_SORT;
-let offset = 0;
+let cursor = 0;
 let isEnd = false;
 let isProcessing = false;
 
@@ -25,14 +25,14 @@ const updateSortVisibility = () => {
 };
 
 // getBoardItem 함수
-const getBoardItem = async (offsetValue = 0, limitValue = 5) => {
+const getBoardItem = async (cursorValue = 0, sizeValue = 5) => {
     const result =
         currentKeyword.trim() === ''
-            ? await getPosts(offsetValue, limitValue)
+            ? await getPosts(cursorValue, sizeValue)
             : await searchPosts(
                   currentKeyword,
-                  offsetValue,
-                  limitValue,
+                  cursorValue,
+                  sizeValue,
                   currentSort,
               );
     if (!result.ok) {
@@ -41,20 +41,20 @@ const getBoardItem = async (offsetValue = 0, limitValue = 5) => {
     return result.data;
 };
 
-const setBoardItem = boardData => {
+const setBoardItem = posts => {
     const boardList = document.querySelector('.boardList');
-    if (boardList && boardData) {
-        const itemsHtml = boardData
-            .map(data =>
+    if (boardList && posts) {
+        const itemsHtml = posts
+            .map(post =>
                 BoardItem(
-                    data.id,
-                    data.createdAt,
-                    data.title,
-                    data.viewCount,
-                    data.author ? data.author.profileImageUrl : null,
-                    data.author ? data.author.nickname : null,
-                    data.commentCount,
-                    data.likeCount,
+                    post.post_id,
+                    post.created_at,
+                    post.title,
+                    post.view_count,
+                    post.author ? post.author.profile_image_url : null,
+                    post.author ? post.author.nickname : null,
+                    post.comment_count,
+                    post.like_count,
                 ),
             )
             .join('');
@@ -75,17 +75,26 @@ const loadBoardItems = async ({ reset = false } = {}) => {
 
     try {
         if (reset) {
-            offset = 0;
+            cursor = 0;
             isEnd = false;
             resetBoardList();
         }
-        const items = await getBoardItem(offset, ITEMS_PER_LOAD);
-        if (!items || items.length === 0) {
+
+        // 백엔드에서 응답해주는 next_cursor와 has_next를 사용하여 페이지네이션 처리
+        const pageData = await getBoardItem(cursor, ITEMS_PER_LOAD);
+        const posts = pageData.posts;
+        const pagination = pageData.pagination;
+
+        if (!posts || posts.length === 0) {
             isEnd = true;
             return;
         }
-        setBoardItem(items);
-        offset += ITEMS_PER_LOAD;
+
+        setBoardItem(posts);
+
+        cursor = pagination.next_cursor;
+        isEnd = !pagination.has_next;
+
     } catch (error) {
         console.error('Error fetching items:', error);
         isEnd = true;
@@ -133,7 +142,7 @@ const addSortEvent = () => {
 
 // 스크롤 이벤트 추가
 const addInfinityScrollEvent = () => {
-    offset = INITIAL_OFFSET;
+    cursor = 0;
     isEnd = false;
     isProcessing = false;
 
@@ -157,7 +166,7 @@ const init = async () => {
         }
 
         const profileImageUrl = resolveImageUrl(
-            data.data.profileImageUrl,
+            data.data.profile_image_url,
             DEFAULT_PROFILE_IMAGE,
         );
 

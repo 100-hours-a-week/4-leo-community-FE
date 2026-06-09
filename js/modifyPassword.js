@@ -12,12 +12,14 @@ import {
 const button = document.querySelector('#signupBtn');
 
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
-const HTTP_CREATED = 201;
+const HTTP_OK = 200;
 
 const dataResponse = await authCheck();
 const data = await dataResponse.json();
+const currentUserId = data.data.user_id;
+
 const profileImage = resolveImageUrl(
-    data.data.profileImageUrl,
+    data.data.profile_image_url,
     DEFAULT_PROFILE_IMAGE,
 );
 
@@ -94,14 +96,14 @@ const addEventForInputElements = () => {
 };
 
 const modifyPassword = async () => {
-    const { password } = modifyData;
+    const { password, passwordCheck } = modifyData;
 
-    const { status } = await changePassword(password);
+    const { status } = await changePassword(currentUserId, password, passwordCheck);
 
-    if (status == HTTP_CREATED) {
+    if (status == HTTP_OK) {
         try {
-            await fetch(`${getServerUrl()}/v1/auth/logout`, {
-                method: 'POST',
+            await fetch(`${getServerUrl()}/auth`, {
+                method: 'DELETE',
                 credentials: 'include',
             });
         } catch (error) {
