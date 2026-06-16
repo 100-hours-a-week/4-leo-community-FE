@@ -35,15 +35,7 @@ export const getComments = async postId => {
     return result;
 };
 
-export const likePost = async postId => {
-    const result = await requestJson(`${getServerUrl()}/posts/${postId}/like`, {
-        method: 'POST',
-        credentials: 'include',
-    });
-    return result;
-};
-
-export const unlikePost = async postId => {
+export const togglePostLike = async postId => {
     const result = await requestJson(`${getServerUrl()}/posts/${postId}/like`, {
         method: 'POST',
         credentials: 'include',

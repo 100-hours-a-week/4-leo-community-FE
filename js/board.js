@@ -3,7 +3,6 @@ import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
 import {
     authCheck,
-    getServerUrl,
     prependChild,
     padTo2Digits,
     resolveImageUrl,
@@ -13,8 +12,7 @@ import {
     deletePost,
     writeComment,
     getComments,
-    likePost,
-    unlikePost,
+    togglePostLike,
 } from '../api/boardRequest.js';
 
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
@@ -91,7 +89,7 @@ const setBoardDetail = data => {
         isLikeLoading = true;
     
         try {
-            const { ok, status, data: likeData } = await likePost(data.post_id);
+            const { ok, status, data: likeData } = await togglePostLike(data.post_id);
     
             if (ok) {
                 isLiked = likeData.is_liked;
@@ -150,19 +148,16 @@ const getBoardComment = async id => {
     return data.comments || [];
 };
 
-const setBoardComment = (data, myInfo) => {
+const setBoardComment = (comments, postId) => {
     const commentListElement = document.querySelector('.commentList');
-    if (commentListElement) {
-        data.map(event => {
-            const item = CommentItem(
-                event,
-                myInfo.userId,
-                event.postId,
-                event.id,
-            );
-            commentListElement.appendChild(item);
-        });
-    }
+    if (!commentListElement) return;
+
+    commentListElement.innerHTML = '';
+
+    comments.forEach(comment => {
+        const item = CommentItem(comment, postId);
+        commentListElement.appendChild(item);
+    });
 };
 
 const addComment = async () => {
@@ -233,7 +228,7 @@ const init = async () => {
         setBoardModify(pageData);
         setBoardDetail(pageData);
 
-        getBoardComment(pageId).then(data => setBoardComment(data, myInfo));
+        getBoardComment(pageId).then(comments => setBoardComment(comments, pageId));
     } catch (error) {
         console.error(error);
     }

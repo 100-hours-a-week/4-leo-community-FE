@@ -3,22 +3,22 @@ import Dialog from '../dialog/dialog.js';
 import { deleteComment, updateComment } from '../../api/commentRequest.js';
 
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
-const HTTP_OK = 200;
 
-const CommentItem = (data, writerId, postId, commentId) => {
+const CommentItem = (data, postId) => {
+    const commentId = data.comment_id;
+
     const CommentDelete = () => {
         Dialog(
             '댓글을 삭제하시겠습니까?',
             '삭제한 내용은 복구 할 수 없습니다.',
             async () => {
-                const { ok, status } = await deleteComment(postId, commentId);
+                const { ok } = await deleteComment(commentId);
                 if (!ok) {
                     Dialog('삭제 실패', '댓글 삭제에 실패하였습니다.');
                     return;
                 }
 
-                if (status === HTTP_OK)
-                    location.href = '/html/board.html?id=' + postId;
+                location.href = '/html/board.html?id=' + postId;
             },
         );
     };
@@ -63,11 +63,8 @@ const CommentItem = (data, writerId, postId, commentId) => {
             }
             // 서버로 수정된 댓글 내용 전송하는 로직
             const updatedContent = textarea.value;
-            const sendData = {
-                commentContent: updatedContent,
-            };
 
-            const { ok } = await updateComment(postId, commentId, sendData);
+            const { ok } = await updateComment(commentId, updatedContent);
             if (!ok)
                 return Dialog('수정 실패', '댓글 수정에 실패하였습니다.');
 
@@ -101,7 +98,7 @@ const CommentItem = (data, writerId, postId, commentId) => {
     const img = document.createElement('img');
     img.className = 'commentImg';
     img.src = resolveImageUrl(
-        data.author && data.author.profileImageUrl,
+        data.author && data.author.profile_image_url,
         DEFAULT_PROFILE_IMAGE,
     );
     picture.appendChild(img);
@@ -117,15 +114,12 @@ const CommentItem = (data, writerId, postId, commentId) => {
     infoDiv.appendChild(h3);
 
     const h4 = document.createElement('h4');
-    const date = new Date(data.createdAt);
+    const date = new Date(data.created_at);
     const formattedDate = `${date.getFullYear()}-${padTo2Digits(date.getMonth() + 1)}-${padTo2Digits(date.getDate())} ${padTo2Digits(date.getHours())}:${padTo2Digits(date.getMinutes())}:${padTo2Digits(date.getSeconds())}`;
     h4.textContent = formattedDate;
     infoDiv.appendChild(h4);
 
-    if (
-        data.author &&
-        parseInt(data.author.userId, 10) === parseInt(writerId, 10)
-    ) {
+    if (data.is_author) {
         const buttonWrap = document.createElement('span');
 
         const deleteButton = document.createElement('button');
