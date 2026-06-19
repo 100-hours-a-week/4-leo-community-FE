@@ -142,10 +142,6 @@ const addSortEvent = () => {
 
 // 스크롤 이벤트 추가
 const addInfinityScrollEvent = () => {
-    cursor = 0;
-    isEnd = false;
-    isProcessing = false;
-
     window.addEventListener('scroll', async () => {
         const hasScrolledToThreshold =
             window.scrollY + window.innerHeight >=
