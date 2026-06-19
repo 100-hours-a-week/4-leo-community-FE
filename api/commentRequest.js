@@ -1,7 +1,7 @@
 import { getServerUrl } from '../utils/function.js';
 import { requestJson } from '../utils/request.js';
 
-export const deleteComment = (postId, commentId) => {
+export const deleteComment = commentId => {
     const result = requestJson(`${getServerUrl()}/comments/${commentId}`, {
         method: 'DELETE',
         credentials: 'include',
@@ -9,7 +9,7 @@ export const deleteComment = (postId, commentId) => {
     return result;
 };
 
-export const updateComment = (postId, commentId, commentContent) => {
+export const updateComment = (commentId, commentContent) => {
     const result = requestJson(`${getServerUrl()}/comments/${commentId}`, {
         method: 'PUT',
         headers: {
