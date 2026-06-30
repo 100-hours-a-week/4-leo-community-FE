@@ -9,7 +9,7 @@ import {
     validNickname,
 } from '../utils/function.js';
 import { userModify, userDelete } from '../api/modifyInfoRequest.js';
-import { requestJson } from '../utils/request.js';
+import { uploadImageWithPresignedUrl } from '../api/imageRequest.js';
 
 const emailTextElement = document.querySelector('#id');
 const nicknameInputElement = document.querySelector('#nickname');
@@ -34,6 +34,7 @@ const changeData = {
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
 const HTTP_OK = 200;
 const HTTP_NO_CONTENT = 204;
+let isProfileUploading = false;
 
 const setData = data => {
     if (data.profile_image_url === null) {
@@ -55,17 +56,20 @@ const setData = data => {
 
 const observeData = () => {
     const button = document.querySelector('#signupBtn');
-    if (
-        authData.data.nickname !== changeData.nickname ||
-        authData.data.profile_image_url !== changeData.profile_image_url
-    ) {
-        button.disabled = false;
-        button.style.backgroundColor = '#7F6AEE';
+  
+    const hasChanges =
+      authData.data.nickname !== changeData.nickname ||
+      authData.data.profile_image_url !==
+        changeData.profile_image_url;
+  
+    if (hasChanges && !isProfileUploading) {
+      button.disabled = false;
+      button.style.backgroundColor = '#7F6AEE';
     } else {
-        button.disabled = true;
-        button.style.backgroundColor = '#ACA0EB';
+      button.disabled = true;
+      button.style.backgroundColor = '#ACA0EB';
     }
-};
+  };
 
 const changeEventHandler = async (event, uid) => {
     const button = document.querySelector('#signupBtn');
@@ -102,43 +106,53 @@ const changeEventHandler = async (event, uid) => {
             changeData.nickname = authData.data.nickname;
         }
     } else if (uid == 'profile') {
-        // 사용자가 선택한 파일
         const file = event.target.files[0];
-        console.log(changeData.profile_image_url);
+      
         if (!file) {
-            localStorage.removeItem('profile_image_url');
-            profilePreview.src = DEFAULT_PROFILE_IMAGE;
-            changeData.profile_image_url = null;
-            if (removeProfileButton) removeProfileButton.style.display = 'none';
-        } else {
-            const formData = new FormData();
-            formData.append('image', file);
-
-            // 파일 업로드를 위한 POST 요청 실행
-            try {
-                const { ok, data } = await requestJson(
-                    `${getServerUrl()}/images?type=profile`,
-                    {
-                        method: 'POST',
-                        body: formData,
-                    },
-                );
-
-                if (!ok) throw new Error('서버 응답 오류');
-                localStorage.setItem(
-                    'profile_image_url',
-                    data.image_url,
-                );
-                changeData.profile_image_url = data.image_url;
-                profilePreview.src = resolveImageUrl(
-                    data.image_url,
-                    DEFAULT_PROFILE_IMAGE,
-                );
-                if (removeProfileButton)
-                    removeProfileButton.style.display = 'flex';
-            } catch (error) {
-                console.error('업로드 중 오류 발생:', error);
-            }
+          return;
+        }
+      
+        isProfileUploading = true;
+        profileInputElement.disabled = true;
+        observeData();
+      
+        try {
+          const { imageUrl } =
+            await uploadImageWithPresignedUrl({
+              type: 'profile',
+              file,
+            });
+      
+          localStorage.setItem(
+            'profile_image_url',
+            imageUrl,
+          );
+      
+          changeData.profile_image_url = imageUrl;
+      
+          profilePreview.src = resolveImageUrl(
+            imageUrl,
+            DEFAULT_PROFILE_IMAGE,
+          );
+      
+          if (removeProfileButton) {
+            removeProfileButton.style.display = 'flex';
+          }
+        } catch (error) {
+          console.error(
+            '프로필 이미지 업로드 실패:',
+            error,
+          );
+      
+          profileInputElement.value = '';
+      
+          Dialog(
+            '프로필 이미지',
+            '이미지 업로드에 실패했습니다.',
+          );
+        } finally {
+          isProfileUploading = false;
+          profileInputElement.disabled = false;
         }
     }
     observeData();

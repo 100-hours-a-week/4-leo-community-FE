@@ -37,14 +37,3 @@ export const checkNickname = async nickname => {
     );
     return result;
 };
-
-export const fileUpload = async file => {
-    const result = await requestJson(
-        `${getServerUrl()}/images?type=profile`,
-        {
-            method: 'POST',
-            body: file,
-        },
-    );
-    return result;
-};
