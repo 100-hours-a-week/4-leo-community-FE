@@ -82,52 +82,6 @@ const signupClick = () => {
     signupBtn.addEventListener('click', getSignupData);
 };
 
-const changeEventHandler = async (event, uid) => {
-    if (uid === 'profile') {
-        const file = event.target.files[0];
-        const helperElement = document.querySelector(
-            `.inputBox p[name="${uid}"]`,
-        );
-
-        signupData.profile_image_url = '';
-
-        if (!file) {
-            helperElement.textContent = '*프로필 이미지를 업로드해주세요.';
-            observeSignupData();
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('image', file);
-
-        isProfileUploading = true;
-        helperElement.textContent = '*이미지 업로드 중입니다.';
-        observeSignupData();
-
-        try {
-            const { ok, data, code } = await fileUpload(formData);
-
-            if (!ok || !data?.image_url) {
-                signupData.profile_image_url = '';
-                helperElement.textContent =
-                    code === 'unsupported_image_type'
-                        ? '*지원하지 않는 이미지 형식입니다.'
-                        : '*이미지 업로드에 실패했습니다.';
-                return;
-            }
-
-            signupData.profile_image_url = data.image_url;
-            helperElement.textContent = '';
-        } catch (error) {
-            signupData.profile_image_url = '';
-            helperElement.textContent = '*이미지 업로드에 실패했습니다.';
-        } finally {
-            isProfileUploading = false;
-            observeSignupData();
-        }
-    }
-};
-
 const inputEventHandler = async (event, uid) => {
     if (uid === 'profile') {
         const file = event.target.files[0];
