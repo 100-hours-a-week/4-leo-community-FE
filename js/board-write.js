@@ -9,10 +9,12 @@ import {
 } from '../utils/function.js';
 import {
     createPost,
-    fileUpload,
     updatePost,
     getBoardItem,
 } from '../api/board-writeRequest.js';
+import { 
+    uploadImageWithPresignedUrl 
+} from '../api/imageRequest.js';
 
 const HTTP_OK = 200;
 const HTTP_CREATED = 201;
@@ -131,27 +133,44 @@ const changeEventHandler = async (event, uid) => {
             helperElement.textContent = '';
         }
     } else if (uid == 'image') {
-        const file = event.target.files[0]; // 사용자가 선택한 파일
+        const file = event.target.files[0];
+      
         if (!file) {
-            console.log('파일이 선택되지 않았습니다.');
-            return;
+          return;
         }
-
-        const formData = new FormData();
-        formData.append('image', file);
-
-        // 파일 업로드를 위한 POST 요청 실행
+      
+        imageInput.disabled = true;
+        submitButton.disabled = true;
+      
         try {
-            const { ok, data } = await fileUpload(formData);
-            if (!ok) throw new Error('서버 응답 오류');
-            localStorage.setItem('postFileUrl', data.image_url);
+          const { imageUrl } = await uploadImageWithPresignedUrl({
+            type: 'post',
+            file,
+          });
+      
+          localStorage.setItem('postFileUrl', imageUrl);
+      
+          if (imagePreviewText !== null) {
+            imagePreviewText.textContent = `${file.name} X`;
+            imagePreviewText.style.display = 'block';
+          }
         } catch (error) {
-            console.error('업로드 중 오류 발생:', error);
+          console.error('이미지 업로드 실패:', error);
+      
+          imageInput.value = '';
+      
+          Dialog(
+            '이미지 업로드',
+            '이미지 업로드에 실패했습니다.',
+          );
+        } finally {
+          imageInput.disabled = false;
         }
     } else if (uid === 'imagePreviewText') {
         localStorage.removeItem('postFileUrl');
+        imageInput.value = '';
         imagePreviewText.style.display = 'none';
-    }
+        }
 
     observeSignupData();
 };

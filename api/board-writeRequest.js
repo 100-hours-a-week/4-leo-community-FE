@@ -26,15 +26,6 @@ export const updatePost = (postId, boardData) => {
     return result;
 };
 
-export const fileUpload = formData => {
-    const result = requestJson(`${getServerUrl()}/images?type=post`, {
-        method: 'POST',
-        body: formData,
-    });
-
-    return result;
-};
-
 export const getBoardItem = postId => {
     const result = requestJson(getServerUrl() + `/posts/${postId}`, {
         method: 'GET',
