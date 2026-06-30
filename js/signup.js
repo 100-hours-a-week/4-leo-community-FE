@@ -11,8 +11,10 @@ import {
     userSignup,
     checkEmail,
     checkNickname,
-    fileUpload,
 } from '../api/signupRequest.js';
+import { 
+    uploadImageWithPresignedUrl 
+} from '../api/imageRequest.js';
 
 const MAX_PASSWORD_LENGTH = 20;
 const HTTP_OK = 200;
@@ -127,69 +129,49 @@ const changeEventHandler = async (event, uid) => {
 };
 
 const inputEventHandler = async (event, uid) => {
-    if (uid == 'email') {
-        const value = event.target.value.trim();
-        const isValidEmail = validEmail(value);
+    if (uid === 'profile') {
+        const file = event.target.files[0];
+      
         const helperElement = document.querySelector(
-            `.inputBox p[name="${uid}"]`,
+          `.inputBox p[name="${uid}"]`,
         );
-    
-        if (!helperElement) return;
-    
-        clearTimeout(emailCheckTimeoutId);
-        signupData.email = '';
-    
-        if (value == '' || value == null) {
-            helperElement.textContent = '*이메일을 입력해주세요.';
-            observeSignupData();
-            return;
+      
+        signupData.profile_image_url = '';
+      
+        if (!file) {
+          helperElement.textContent =
+            '*프로필 이미지를 업로드해주세요.';
+      
+          observeSignupData();
+          return;
         }
-    
-        if (!isValidEmail) {
-            helperElement.textContent =
-                '*올바른 이메일 주소 형식을 입력해주세요. (예: example@example.com)';
-            observeSignupData();
-            return;
-        }
-    
-        helperElement.textContent = '*이메일 중복 확인 중입니다.';
+      
+        isProfileUploading = true;
+        helperElement.textContent = '*이미지 업로드 중입니다.';
         observeSignupData();
-    
-        const requestedValue = value;
-    
-        emailCheckTimeoutId = setTimeout(async () => {
-            try {
-                const { status } = await checkEmail(requestedValue);
-    
-                const currentValue =
-                    document.querySelector('#email')?.value.trim() || '';
-    
-                if (currentValue !== requestedValue) {
-                    return;
-                }
-    
-                if (status === HTTP_OK) {
-                    helperElement.textContent = '';
-                    signupData.email = requestedValue;
-                } else {
-                    helperElement.textContent = '*중복된 이메일 입니다.';
-                    signupData.email = '';
-                }
-            } catch (error) {
-                const currentValue =
-                    document.querySelector('#email')?.value.trim() || '';
-    
-                if (currentValue !== requestedValue) {
-                    return;
-                }
-    
-                helperElement.textContent = '*이메일 확인 중 오류가 발생했습니다.';
-                signupData.email = '';
-            } finally {
-                observeSignupData();
-            }
-        }, DEBOUNCE_DELAY);
-    } else if (uid == 'pw') {
+      
+        try {
+          const { imageUrl } =
+            await uploadImageWithPresignedUrl({
+              file,
+              signupProfile: true,
+            });
+      
+          signupData.profile_image_url = imageUrl;
+          helperElement.textContent = '';
+        } catch (error) {
+          console.error('프로필 이미지 업로드 실패:', error);
+      
+          signupData.profile_image_url = '';
+          event.target.value = '';
+      
+          helperElement.textContent =
+            '*이미지 업로드에 실패했습니다.';
+        } finally {
+          isProfileUploading = false;
+          observeSignupData();
+        }
+      } else if (uid == 'pw') {
         const value = event.target.value;
         const isValidPassword = validPassword(value);
         const helperElement = document.querySelector(
