@@ -265,7 +265,7 @@ const addEventForInputElements = () => {
         const id = element.id;
         if (id === 'profile') {
             element.addEventListener('change', event =>
-                changeEventHandler(event, id),
+              inputEventHandler(event, id),
             );
         } else {
             element.addEventListener('input', event =>
