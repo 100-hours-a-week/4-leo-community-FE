@@ -1,138 +1,135 @@
 .commentItem {
     display: flex;
     flex-direction: row;
-    column-gap: 16px;
+    column-gap: 10px;
 }
+
 .commentItem .commentImg {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     object-fit: cover;
 }
+
 .commentInfoWrap {
     display: flex;
     flex-direction: column;
-    row-gap: 16px;
+    row-gap: 6px;
     width: 100%;
-
     word-break: break-all;
 }
 
 .commentInfoWrap p {
     word-break: break-all;
     font-weight: 400;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
 }
 
 .commentInfoHeader {
     display: flex;
     flex-direction: row;
-    column-gap: 16px;
+    column-gap: 8px;
     align-items: center;
     width: 100%;
 }
+
 .commentInfoHeader span {
     margin-left: auto;
     display: flex;
     flex-direction: row;
-    column-gap: 8px;
+    column-gap: 4px;
 }
+
 .commentInfoHeader span button {
-    padding: 5px 12px;
-    border-radius: 8px;
-    border: 1px solid #aca0eb;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 0;
     background-color: transparent;
-    color: #000;
-    font-size: 15px;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.commentInfoHeader span button:hover {
+    background: var(--surface-2);
+    color: var(--text);
 }
 
 .commentInfoHeader h3 {
-    font-size: 14px;
-    font-weight: 700;
-    line-height: 17px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
     letter-spacing: -0.01em;
     text-align: left;
+    color: var(--text);
 }
+
 .commentInfoHeader h4 {
     font-size: 12px;
     font-weight: 400;
-    line-height: 14px;
-    letter-spacing: -0.01em;
-    text-align: right;
-    color: #000000;
-}
-
-.commentInfoHeader button {
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 14px;
-    letter-spacing: -0.01em;
-    text-align: right;
-    color: rgba(171, 174, 186, 1);
-    margin-left: auto;
-
-    border: none;
-    background-color: #fff;
-    cursor: pointer;
+    line-height: 1.3;
+    color: var(--muted);
 }
 
 .commentEditWrap {
     display: flex;
     flex-direction: column;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     overflow: hidden;
-    background-color: rgba(249, 249, 250, 1);
+    border: 1px solid var(--line-dark);
+    background-color: var(--surface);
 }
 
 .commentEditTextarea {
     width: 100%;
-    min-height: 120px;
-    background-color: rgba(249, 249, 250, 1);
+    min-height: 96px;
+    background-color: var(--surface);
     border: none;
     resize: none;
     outline: none;
-    padding: 16px;
+    padding: 12px;
     font-size: 14px;
-    line-height: 1.4;
-    color: #000;
+    line-height: 1.5;
+    color: var(--text);
 }
 
 .commentEditActions {
     display: flex;
     justify-content: flex-end;
-    gap: 8px;
-    padding: 8px 12px;
-    border-top: 1px solid rgba(238, 238, 241, 1);
-    background-color: rgba(249, 249, 250, 1);
+    gap: 6px;
+    padding: 8px;
+    border-top: 1px solid var(--line);
+    background-color: var(--surface);
 }
 
 .commentEditActions button {
-    padding: 6px 16px;
-    border-radius: 12px;
+    padding: 6px 14px;
+    border-radius: 6px;
     font-size: 12px;
     line-height: 14px;
-    letter-spacing: -0.01em;
     cursor: pointer;
     font-weight: 600;
-    transition: background-color 0.2s ease, color 0.2s ease,
-        border-color 0.2s ease;
+    transition: background-color 0.15s ease;
 }
 
 .commentEditSave {
-    background-color: #7f6aee;
+    background-color: var(--accent);
     color: #fff;
     border: none;
 }
 
-.commentEditCancel {
-    background-color: #f3f0ff;
-    color: #5e48d8;
-    border: 1px solid #d8d1ff;
+.commentEditSave:hover {
+    background-color: var(--accent-2);
 }
 
-.commentEditSave:hover {
-    background-color: #6f58e8;
+.commentEditCancel {
+    background-color: transparent;
+    color: var(--text);
+    border: 1px solid var(--line-dark);
 }
 
 .commentEditCancel:hover {
-    background-color: #e7e2ff;
+    background-color: var(--surface-2);
 }

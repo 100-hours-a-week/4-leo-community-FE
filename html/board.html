@@ -4,57 +4,64 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="/config.js"></script>
-    <link
-            rel="stylesheet"
-            href="../css/board.css"
-            crossorigin="anonymous"
-    />
-    <title>게시판 상세</title>
+    <link rel="stylesheet" href="../css/board.css" crossorigin="anonymous" />
+    <title>사진 상세</title>
 </head>
 <body>
-<section class="wrap">
-    <section class="head">
-        <h1 class="title"></h1>
-        <div class="writerWrap">
-            <picture class="profileImg">
-                <img class="img" src="/public/profile_default.svg" />
-            </picture>
-            <h2 class="nickname"></h2>
-            <h3 class="createdAt"></h3>
-            <div class="mod hidden">
-                <button id="modifyBtn">수정</button>
-                <button id="deleteBtn">삭제</button>
-            </div>
-        </div>
-    </section>
-    <section class="body">
-        <div class="contentImg"></div>
-        <article class="content"></article>
-        <article class="bodyWrap">
-            <div class="commentWrap">
-                <button class="countItem likeButton" type="button" aria-pressed="false">
-                    <h3></h3>
-                    <p>좋아요수</p>
-                </button>
-                <div class="countItem viewCount">
-                    <h3></h3>
-                    <p>조회수</p>
+<section class="wrap detailPage">
+    <section class="photoDetailShell">
+        <section class="photoStage">
+            <div class="contentImg"></div>
+        </section>
+
+        <aside class="detailPanel">
+            <section class="head">
+                <div class="writerWrap">
+                    <picture class="profileImg">
+                        <img class="img" src="/public/profile_default.svg" alt="작성자 프로필" />
+                    </picture>
+                    <div class="writerText">
+                        <h2 class="nickname"></h2>
+                        <h3 class="createdAt"></h3>
+                    </div>
+                    <div class="mod hidden">
+                        <button id="modifyBtn">수정</button>
+                        <button id="deleteBtn">삭제</button>
+                    </div>
                 </div>
-                <div class="countItem commentCount">
-                    <h3></h3>
-                    <p>댓글</p>
+                <h1 class="title"></h1>
+            </section>
+
+            <section class="body">
+                <article class="content"></article>
+                <article class="bodyWrap">
+                    <div class="commentWrap">
+                        <button class="countItem likeButton" type="button" aria-pressed="false">
+                            <h3></h3>
+                            <p>좋아요</p>
+                        </button>
+                        <div class="countItem viewCount">
+                            <h3></h3>
+                            <p>조회</p>
+                        </div>
+                        <div class="countItem commentCount">
+                            <h3></h3>
+                            <p>댓글</p>
+                        </div>
+                    </div>
+                </article>
+            </section>
+
+            <section class="comment">
+                <div class="commentInputWrap">
+                    <textarea placeholder="이 사진에 대한 생각을 남겨보세요." maxlength="1000"></textarea>
+                    <div>
+                        <button class="commentInputBtn">댓글 등록</button>
+                    </div>
                 </div>
-            </div>
-        </article>
-    </section>
-    <section class="comment">
-        <div class="commentInputWrap">
-            <textarea placeholder="댓글을 남겨주세요!"></textarea>
-            <div>
-                <button class="commentInputBtn">댓글 등록</button>
-            </div>
-        </div>
-        <div class="commentList"></div>
+                <div class="commentList"></div>
+            </section>
+        </aside>
     </section>
 </section>
 <div class="background"></div>

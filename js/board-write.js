@@ -22,13 +22,17 @@ const HTTP_CREATED = 201;
 const MAX_TITLE_LENGTH = 26;
 const MAX_CONTENT_LENGTH = 1500;
 
-const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
+const DEFAULT_PROFILE_IMAGE = '/public/profile_default.svg';
 
 const submitButton = document.querySelector('#submit');
 const titleInput = document.querySelector('#title');
 const contentInput = document.querySelector('#content');
 const imageInput = document.querySelector('#image');
 const imagePreviewText = document.getElementById('imagePreviewText');
+const uploadDrop = document.querySelector('.uploadDrop');
+const imagePreview = document.getElementById('imagePreview');
+const uploadEmpty = document.getElementById('uploadEmpty');
+let localPreviewUrl = null;
 const contentHelpElement = document.querySelector(
     '.inputBox p[name="content"]',
 );
@@ -45,10 +49,10 @@ const observeSignupData = () => {
     const { title, content } = boardWrite;
     if (!title || !content || title === '' || content === '') {
         submitButton.disabled = true;
-        submitButton.style.backgroundColor = '#ACA0EB';
+        submitButton.style.opacity = '0.42';
     } else {
         submitButton.disabled = false;
-        submitButton.style.backgroundColor = '#7F6AEE';
+        submitButton.style.opacity = '1';
     }
 };
 
@@ -141,6 +145,19 @@ const changeEventHandler = async (event, uid) => {
       
         imageInput.disabled = true;
         submitButton.disabled = true;
+
+        if (localPreviewUrl) {
+            URL.revokeObjectURL(localPreviewUrl);
+        }
+        localPreviewUrl = URL.createObjectURL(file);
+        if (imagePreview && uploadDrop) {
+            imagePreview.src = localPreviewUrl;
+            uploadDrop.classList.add('hasImage');
+        }
+        if (imagePreviewText !== null) {
+            imagePreviewText.textContent = '업로드 처리 중...';
+            imagePreviewText.style.display = 'block';
+        }
       
         try {
           const { imageUrl } = await uploadImageWithPresignedUrl({
@@ -151,13 +168,15 @@ const changeEventHandler = async (event, uid) => {
           localStorage.setItem('postFileUrl', imageUrl);
       
           if (imagePreviewText !== null) {
-            imagePreviewText.textContent = `${file.name} X`;
+            imagePreviewText.textContent = '선택한 사진 지우기';
             imagePreviewText.style.display = 'block';
           }
         } catch (error) {
           console.error('이미지 업로드 실패:', error);
       
           imageInput.value = '';
+          if (uploadDrop) uploadDrop.classList.remove('hasImage');
+          if (imagePreview) imagePreview.removeAttribute('src');
       
           Dialog(
             '이미지 업로드',
@@ -170,6 +189,12 @@ const changeEventHandler = async (event, uid) => {
         localStorage.removeItem('postFileUrl');
         imageInput.value = '';
         imagePreviewText.style.display = 'none';
+        if (uploadDrop) uploadDrop.classList.remove('hasImage');
+        if (imagePreview) imagePreview.removeAttribute('src');
+        if (localPreviewUrl) {
+            URL.revokeObjectURL(localPreviewUrl);
+            localPreviewUrl = null;
+        }
         }
 
     observeSignupData();
@@ -214,9 +239,11 @@ const setModifyData = data => {
     const fileUrl = data.image_url;
 
     if (fileUrl) {
-        const fileName = fileUrl.split('/').pop();
-        imagePreviewText.innerHTML =
-            fileName + `<span class="deleteFile">X</span>`;
+        if (imagePreview && uploadDrop) {
+            imagePreview.src = resolveImageUrl(fileUrl);
+            uploadDrop.classList.add('hasImage');
+        }
+        imagePreviewText.textContent = '선택한 사진 지우기';
         imagePreviewText.style.display = 'block';
         localStorage.setItem('postFileUrl', fileUrl);
     } else {
@@ -240,7 +267,7 @@ const init = async () => {
         DEFAULT_PROFILE_IMAGE,
     );
 
-    prependChild(document.body, Header('커뮤니티', 1, profileImage));
+    prependChild(document.body, Header('Leo Photos', 1, profileImage));
 
     if (modifyId) {
         isModifyMode = true;

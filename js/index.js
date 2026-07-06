@@ -1,14 +1,13 @@
 import BoardItem from '../component/board/boardItem.js';
 import Dialog from '../component/dialog/dialog.js';
 import Header from '../component/header/header.js';
-import { authCheck, getServerUrl, prependChild, resolveImageUrl } from '../utils/function.js';
+import { authCheck, prependChild, resolveImageUrl } from '../utils/function.js';
 import { getPosts, searchPosts } from '../api/indexRequest.js';
 
-const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
+const DEFAULT_PROFILE_IMAGE = '/public/profile_default.svg';
 const HTTP_NOT_AUTHORIZED = 401;
-const SCROLL_THRESHOLD = 0.9;
-const INITIAL_OFFSET = 5;
-const ITEMS_PER_LOAD = 5;
+const SCROLL_THRESHOLD = 0.88;
+const ITEMS_PER_LOAD = 12;
 const DEFAULT_SORT = 'recent';
 let currentKeyword = '';
 let currentSort = DEFAULT_SORT;
@@ -24,8 +23,7 @@ const updateSortVisibility = () => {
     sortRow.setAttribute('aria-hidden', String(!isSearching));
 };
 
-// getBoardItem 함수
-const getBoardItem = async (cursorValue = 0, sizeValue = 5) => {
+const getBoardItem = async (cursorValue = 0, sizeValue = ITEMS_PER_LOAD) => {
     const result =
         currentKeyword.trim() === ''
             ? await getPosts(cursorValue, sizeValue)
@@ -43,23 +41,36 @@ const getBoardItem = async (cursorValue = 0, sizeValue = 5) => {
 
 const setBoardItem = posts => {
     const boardList = document.querySelector('.boardList');
-    if (boardList && posts) {
-        const itemsHtml = posts
-            .map(post =>
-                BoardItem(
-                    post.post_id,
-                    post.created_at,
-                    post.title,
-                    post.view_count,
-                    post.author ? post.author.profile_image_url : null,
-                    post.author ? post.author.nickname : null,
-                    post.comment_count,
-                    post.like_count,
-                ),
-            )
-            .join('');
-        boardList.innerHTML += ` ${itemsHtml}`;
-    }
+    if (!boardList || !posts) return;
+
+    const itemsHtml = posts
+        .map(post =>
+            BoardItem({
+                postId: post.post_id,
+                date: post.created_at,
+                title: post.title,
+                content: post.content,
+                imageUrl: post.image_url,
+                viewCount: post.view_count,
+                profileImageUrl: post.author ? post.author.profile_image_url : null,
+                writer: post.author ? post.author.nickname : null,
+                commentCount: post.comment_count,
+                likeCount: post.like_count,
+            }),
+        )
+        .join('');
+
+    boardList.innerHTML += itemsHtml;
+};
+
+const setEmptyState = () => {
+    const boardList = document.querySelector('.boardList');
+    if (!boardList) return;
+    boardList.innerHTML = `
+        <div class="emptyState">
+            아직 보여줄 사진이 없습니다. 첫 사진을 올려보세요.
+        </div>
+    `;
 };
 
 const resetBoardList = () => {
@@ -80,13 +91,13 @@ const loadBoardItems = async ({ reset = false } = {}) => {
             resetBoardList();
         }
 
-        // 백엔드에서 응답해주는 next_cursor와 has_next를 사용하여 페이지네이션 처리
         const pageData = await getBoardItem(cursor, ITEMS_PER_LOAD);
         const posts = pageData.posts;
         const pagination = pageData.pagination;
 
         if (!posts || posts.length === 0) {
             isEnd = true;
+            if (reset) setEmptyState();
             return;
         }
 
@@ -94,9 +105,9 @@ const loadBoardItems = async ({ reset = false } = {}) => {
 
         cursor = pagination.next_cursor;
         isEnd = !pagination.has_next;
-
     } catch (error) {
         console.error('Error fetching items:', error);
+        if (reset) setEmptyState();
         isEnd = true;
     } finally {
         isProcessing = false;
@@ -140,7 +151,6 @@ const addSortEvent = () => {
     });
 };
 
-// 스크롤 이벤트 추가
 const addInfinityScrollEvent = () => {
     window.addEventListener('scroll', async () => {
         const hasScrolledToThreshold =
@@ -166,10 +176,7 @@ const init = async () => {
             DEFAULT_PROFILE_IMAGE,
         );
 
-        prependChild(
-            document.body,
-            Header('Community', 0, profileImageUrl),
-        );
+        prependChild(document.body, Header('Leo Photos', 0, profileImageUrl));
 
         updateSortVisibility();
         await loadBoardItems({ reset: true });

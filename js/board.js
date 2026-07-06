@@ -15,7 +15,7 @@ import {
     togglePostLike,
 } from '../api/boardRequest.js';
 
-const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
+const DEFAULT_PROFILE_IMAGE = '/public/profile_default.svg';
 const MAX_COMMENT_LENGTH = 1000;
 const HTTP_NOT_AUTHORIZED = 401;
 const HTTP_OK = 200;
@@ -68,10 +68,13 @@ const setBoardDetail = data => {
     const contentImgElement = document.querySelector('.contentImg');
     const fileUrl = data.image_url;
     if (fileUrl) {
-        console.log(fileUrl);
         const img = document.createElement('img');
         img.src = resolveImageUrl(fileUrl);
+        img.alt = data.title || '게시글 이미지';
         contentImgElement.appendChild(img);
+    } else {
+        contentImgElement.classList.add('isEmpty');
+        contentImgElement.textContent = 'No photo';
     }
     const contentElement = document.querySelector('.content');
     contentElement.textContent = data.content;
@@ -187,10 +190,10 @@ const inputComment = async () => {
     }
     if (textareaElement.value === '') {
         commentBtnElement.disabled = true;
-        commentBtnElement.style.backgroundColor = '#ACA0EB';
+        commentBtnElement.style.opacity = '0.45';
     } else {
         commentBtnElement.disabled = false;
-        commentBtnElement.style.backgroundColor = '#7F6AEE';
+        commentBtnElement.style.opacity = '1';
     }
 };
 
@@ -210,7 +213,6 @@ const init = async () => {
         textareaElement.addEventListener('input', inputComment);
         commentBtnElement.addEventListener('click', addComment);
         commentBtnElement.disabled = true;
-        console.log(myInfo);
         if (data.status === HTTP_NOT_AUTHORIZED) {
             window.location.href = '/html/login.html';
         }
@@ -219,7 +221,7 @@ const init = async () => {
             DEFAULT_PROFILE_IMAGE,
         );
 
-        prependChild(document.body, Header('커뮤니티', 2, profileImage));
+        prependChild(document.body, Header('Leo Photos', 2, profileImage));
 
         const pageId = getQueryString('id');
 
