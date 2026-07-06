@@ -1,87 +1,206 @@
 .boardItem {
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    color: var(--text);
+}
+
+/* ---- 사진 카드: 사진만 보이고, 정보는 호버 오버레이 ---- */
+
+.boardItem.hasPhoto {
+    position: relative;
+    background: #141414;
+}
+
+.photoCardMedia {
+    width: 100%;
+    background: var(--surface-2);
+}
+
+.photoCardMedia img {
+    width: 100%;
+    height: auto;
+    max-height: 620px;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.boardItem.hasPhoto:hover .photoCardMedia img {
+    transform: scale(1.025);
+}
+
+.photoCardOverlay {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
-    width: 100%;
-
-    padding: 16px 0;
-    border: 1px solid rgba(241, 241, 243, 1);
-    border-radius: 8px;
-
-    cursor: pointer;
-    box-shadow: 3px 4px 4px 0px #cccccc40;
+    justify-content: flex-end;
+    gap: 5px;
+    padding: 12px 13px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 46%, rgba(0, 0, 0, 0.62) 100%);
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.22s ease;
 }
 
-.boardItem .date {
-    align-self: flex-end;
-
-    font-size: 12px;
-    line-height: 17px;
-    margin-left: 60px;
-    color: rgba(171, 174, 186, 1);
-    letter-spacing: -0.02em;
-    padding: 0 20px;
+.boardItem.hasPhoto:hover .photoCardOverlay,
+a:focus-visible .photoCardOverlay {
+    opacity: 1;
 }
 
-.boardItem .title {
-    font-size: 24px;
-    font-weight: bold;
-    line-height: 32px;
-
-    color: #000000;
-    letter-spacing: -0.02em;
-
-    margin-bottom: 24px;
-    padding: 0 20px;
-}
-
-.boardItem .info {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    column-gap: 16px;
-    padding-bottom: 16px;
-    padding-left: 20px;
-    border-bottom: 1px solid gray;
-}
-
-.boardItem .info h3,
-.boardItem .info b {
-    font-size: 15px;
-    font-weight: 200;
-    line-height: 17px;
-    letter-spacing: -0.02em;
-
-    color: black;
-}
-
-.boardItem .writerInfo {
-    margin-top: 16px;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    column-gap: 16px;
-    padding: 0 20px;
-}
-
-.boardItem .img {
-    width: 32px;
-    height: 32px;
-
-    border-radius: 50%;
-    overflow: hidden;
-}
-
-.boardItem .img img {
-    width: 100%;
-    height: 100%;
-
-    object-fit: cover;
-}
-
-.boardItem .writer {
+.photoCardOverlay .title {
+    font-family: inherit;
+    color: #fff;
     font-size: 14px;
-    line-height: 22px;
-    letter-spacing: -0.02em;
+    line-height: 1.45;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
 
-    color: rgba(92, 97, 112, 1);
+.photoCardOverlay .photoCardMeta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.92);
+    min-width: 0;
+}
+
+.photoCardOverlay .photoCardMeta img {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: none;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.photoCardOverlay .photoCardMeta .writer {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.photoCardOverlay .photoCardMeta .date {
+    flex: none;
+    color: rgba(255, 255, 255, 0.66);
+}
+
+.photoCardOverlay .photoCardMeta .date::before {
+    content: '·';
+    margin-right: 6px;
+}
+
+.photoCardOverlay .info {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.photoCardOverlay .info span + span::before {
+    content: '·';
+    margin: 0 5px;
+}
+
+/* 터치 기기: 호버가 없으므로 오버레이 하단부를 항상 표시 */
+@media (hover: none) {
+    .photoCardOverlay {
+        opacity: 1;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.6) 100%);
+    }
+
+    .photoCardMedia img {
+        transition: none;
+    }
+}
+
+/* ---- 텍스트 카드 (이미지 없는 글) ---- */
+
+.boardItem.isTextOnly {
+    border: 1px solid var(--line);
+    border-top: 2px solid var(--accent);
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    background: var(--surface);
+    transition: border-color 0.15s ease;
+}
+
+.boardItem.isTextOnly:hover {
+    border-color: var(--line-dark);
+    border-top-color: var(--accent);
+}
+
+.photoCardBody {
+    padding: 20px 18px 16px;
+}
+
+.boardItem.isTextOnly .title {
+    font-family: inherit;
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.45;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.boardItem.isTextOnly .excerpt {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 13.5px;
+    line-height: 1.7;
+    letter-spacing: -0.01em;
+}
+
+.boardItem.isTextOnly .photoCardMeta {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 12px;
+    min-width: 0;
+}
+
+.boardItem.isTextOnly .photoCardMeta img {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: none;
+}
+
+.boardItem.isTextOnly .photoCardMeta .writer {
+    color: var(--text);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.boardItem.isTextOnly .photoCardMeta .date {
+    flex: none;
+}
+
+.boardItem.isTextOnly .photoCardMeta .date::before {
+    content: '·';
+    margin-right: 7px;
+}
+
+.boardItem.isTextOnly .info {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.boardItem.isTextOnly .info span + span::before {
+    content: '·';
+    margin: 0 6px;
 }

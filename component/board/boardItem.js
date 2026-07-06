@@ -1,59 +1,91 @@
 import { padTo2Digits, resolveImageUrl } from '../../utils/function.js';
 
-const BoardItem = (
-    postId,
-    date,
-    title,
-    viewCount,
-    imgUrl,
-    writer,
-    commentCount,
-    likeCount,
-) => {
-    // 파라미터 값이 없으면 리턴
-    if (
-        !date ||
-        !title ||
-        viewCount === undefined ||
-        likeCount === undefined ||
-        commentCount === undefined ||
-        !writer
-    ) {
-        return;
-    }
+const DEFAULT_PROFILE_IMAGE = '/public/profile_default.svg';
 
-    // 날짜 포맷 변경 YYYY-MM-DD hh:mm:ss
+const escapeHtml = value =>
+    String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+const formatDate = date => {
     const dateObj = new Date(date);
+    if (Number.isNaN(dateObj.getTime())) return '';
+
     const year = dateObj.getFullYear();
     const month = dateObj.getMonth() + 1;
     const day = dateObj.getDate();
-    const hours = dateObj.getHours();
-    const minutes = dateObj.getMinutes();
-    const seconds = dateObj.getSeconds();
 
-    const formattedDate = `${year}-${padTo2Digits(month)}-${padTo2Digits(day)} ${padTo2Digits(hours)}:${padTo2Digits(minutes)}:${padTo2Digits(seconds)}`;
+    return `${year}.${padTo2Digits(month)}.${padTo2Digits(day)}`;
+};
 
-    const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
-    const profileImageUrl = resolveImageUrl(imgUrl, DEFAULT_PROFILE_IMAGE);
-    // const API_HOST = getServerUrl();
+const truncate = (value, maxLength = 140) => {
+    const text = String(value ?? '').trim();
+    if (text.length <= maxLength) return text;
+    return `${text.slice(0, maxLength).trim()}…`;
+};
+
+const BoardItem = ({
+    postId,
+    date,
+    title,
+    content,
+    imageUrl,
+    viewCount,
+    profileImageUrl,
+    writer,
+    commentCount,
+    likeCount,
+}) => {
+    if (!postId || !date || !title || !writer) return '';
+
+    const formattedDate = formatDate(date);
+    const resolvedProfileImageUrl = resolveImageUrl(
+        profileImageUrl,
+        DEFAULT_PROFILE_IMAGE,
+    );
+    const resolvedPostImageUrl = resolveImageUrl(imageUrl, null);
+    const safeTitle = escapeHtml(title);
+    const safeWriter = escapeHtml(writer);
+    const safeContent = escapeHtml(truncate(content));
+
+    const meta = `
+                <div class="photoCardMeta">
+                    <img src="${resolvedProfileImageUrl}" alt="${safeWriter} 프로필" loading="lazy" />
+                    <span class="writer">${safeWriter}</span>
+                    <span class="date">${formattedDate}</span>
+                </div>`;
+
+    const info = `
+                <div class="info">
+                    <span>좋아요 ${likeCount ?? 0}</span>
+                    <span>댓글 ${commentCount ?? 0}</span>
+                    <span>조회 ${viewCount ?? 0}</span>
+                </div>`;
+
+    const card = resolvedPostImageUrl
+        ? `<article class="boardItem hasPhoto">
+            <figure class="photoCardMedia"><img src="${resolvedPostImageUrl}" alt="${safeTitle}" loading="lazy" /></figure>
+            <div class="photoCardOverlay">
+                <h2 class="title">${safeTitle}</h2>
+                ${meta}
+                ${info}
+            </div>
+        </article>`
+        : `<article class="boardItem isTextOnly">
+            <div class="photoCardBody">
+                <h2 class="title">${safeTitle}</h2>
+                ${safeContent ? `<p class="excerpt">${safeContent}</p>` : ''}
+                ${meta}
+                ${info}
+            </div>
+        </article>`;
 
     return `
-    <a href="/html/board.html?id=${postId}">
-        <div class="boardItem">
-            <h2 class="title">${title}</h2>
-            <div class="info">
-                <h3 class="views">좋아요 <b>${likeCount}</b></h3>
-                <h3 class="views">댓글 <b>${commentCount}</b></h3>
-                <h3 class="views">조회수 <b>${viewCount}</b></h3>
-                <p class="date">${formattedDate}</p>
-            </div>
-            <div class="writerInfo">
-            <picture class="img">
-                <img src="${`${profileImageUrl}`}" alt="img">
-            </picture>
-            <h2 class="writer">${writer}</h2>
-        </div>
-        </div>
+    <a href="/html/board.html?id=${postId}" aria-label="${safeTitle} 게시글 보기">
+        ${card}
     </a>
 `;
 };
