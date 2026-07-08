@@ -1,0 +1,19 @@
+services:
+  community-frontend:
+    image: 501479502338.dkr.ecr.ap-northeast-2.amazonaws.com/community/frontend:${IMAGE_TAG:-latest}
+    container_name: community-frontend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      # node 로 루트(/)에 요청해 200~399 응답이면 정상으로 판단
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/', r => process.exit(r.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 10s      # 10초마다 검사
+      timeout: 3s        # 3초 안에 응답 없으면 실패로 간주
+      retries: 5         # 5번 연속 실패하면 unhealthy
+      start_period: 15s  # Node 서버 부팅 유예 시간 (Spring 보다 짧음)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
