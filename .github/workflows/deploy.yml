@@ -3,13 +3,12 @@ name: Frontend CI/CD
 on:
   push:
     branches:
-      - main       # main    -> 빌드 + ECR push + 배포
-      - develop    # develop -> 빌드 검증만 (push X, 배포 X)
+      - main       # 빌드 + ECR push + 배포
+      - develop    # 빌드 검증만
 
-# OIDC 로 AWS 임시 자격증명을 받기 위해 필요한 최소 권한
 permissions:
-  id-token: write   # OIDC 토큰 발급용 (main step 에서만 실제 사용)
-  contents: read    # 소스 체크아웃용
+  id-token: write   # OIDC 토큰 발급용
+  contents: read
 
 env:
   AWS_REGION: ap-northeast-2
@@ -20,17 +19,15 @@ env:
 jobs:
   build-and-deploy:
     name: Build (& Deploy on main)
-    # arm64 네이티브 러너에서 빌드
+    # 배포 대상 EC2(t4g.micro = Graviton)가 ARM64 이므로 arm64 네이티브 러너에서 빌드한다.
     runs-on: ubuntu-24.04-arm
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Compute image tag
         id: meta
         run: echo "image_tag=git-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
-      # ---- main 브랜치에서만: OIDC 자격증명 ----
       - name: Configure AWS credentials (OIDC)
         if: github.ref == 'refs/heads/main'
         uses: aws-actions/configure-aws-credentials@v4
@@ -42,91 +39,55 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: aws-actions/amazon-ecr-login@v2
 
-      # ---- 이 태그가 ECR 에 이미 있는지 확인 ----
-      - name: Check if image tag already exists in ECR
+      # 불변 태그라 이미 있는 태그를 재push 하면 실패한다.
+      # 존재하면 build/push 를 건너뛰어 re-run/재배포에도 안전하게 한다.
+      - name: Check if image tag exists in ECR
         id: check
         if: github.ref == 'refs/heads/main'
         run: |
-          IMAGE_TAG="${{ steps.meta.outputs.image_tag }}"
-          if aws ecr describe-images \
-              --region "${AWS_REGION}" \
-              --repository-name "${ECR_REPOSITORY}" \
-              --image-ids imageTag="${IMAGE_TAG}" >/dev/null 2>&1; then
+          if aws ecr describe-images --repository-name "${ECR_REPOSITORY}" \
+              --image-ids imageTag="${{ steps.meta.outputs.image_tag }}" >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "이미 존재하는 태그(${IMAGE_TAG}) → build/push 건너뜀"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "새 태그(${IMAGE_TAG}) → build/push 진행"
           fi
 
-      # ---- 빌드 ----
-      - name: Build Docker image
+      - name: Build image
         run: |
-          if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
-            if [ "${{ steps.check.outputs.exists }}" = "true" ]; then
-              echo "이미 ECR 에 있는 이미지이므로 빌드를 건너뜁니다."
-            else
-              IMAGE_TAG="${{ steps.meta.outputs.image_tag }}"
-              docker build -t "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}" .
-            fi
-          else
-            docker build -t community-frontend:ci-check .
+          if [ "${GITHUB_REF}" = "refs/heads/main" ] && [ "${{ steps.check.outputs.exists }}" = "false" ]; then
+            docker build -t "${ECR_REGISTRY}/${ECR_REPOSITORY}:${{ steps.meta.outputs.image_tag }}" .
+          elif [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            docker build -t community-frontend:ci-check .   # develop: 빌드 검증만
           fi
 
-      # ---- ECR push (main + 태그 미존재 시에만) ----
       - name: Push image to ECR
         if: github.ref == 'refs/heads/main' && steps.check.outputs.exists == 'false'
-        run: |
-          IMAGE_TAG="${{ steps.meta.outputs.image_tag }}"
-          docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+        run: docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:${{ steps.meta.outputs.image_tag }}"
 
-      # ---- 배포 (main 이면 항상, 태그 존재 여부와 무관) ----
       - name: Deploy via SSM Run Command
         if: github.ref == 'refs/heads/main'
         run: |
           IMAGE_TAG="${{ steps.meta.outputs.image_tag }}"
 
           COMMAND_ID=$(aws ssm send-command \
-            --region "${AWS_REGION}" \
             --instance-ids "${FRONTEND_INSTANCE_ID}" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy community-frontend ${IMAGE_TAG}" \
             --parameters commands="cd /home/ubuntu/community-frontend && bash deploy.sh ${IMAGE_TAG}" \
-            --query "Command.CommandId" \
-            --output text)
+            --query "Command.CommandId" --output text)
 
-          echo "SSM Command ID: ${COMMAND_ID}"
+          aws ssm wait command-executed \
+            --command-id "${COMMAND_ID}" --instance-id "${FRONTEND_INSTANCE_ID}" || true
 
-          echo "배포 실행 대기 중..."
-          if ! aws ssm wait command-executed \
-            --region "${AWS_REGION}" \
-            --command-id "${COMMAND_ID}" \
-            --instance-id "${FRONTEND_INSTANCE_ID}"; then
-            echo "::warning::wait 가 timeout 되었을 수 있습니다. 실제 결과를 아래에서 확인합니다."
-          fi
-
-          STATUS=$(aws ssm get-command-invocation \
-            --region "${AWS_REGION}" \
-            --command-id "${COMMAND_ID}" \
-            --instance-id "${FRONTEND_INSTANCE_ID}" \
-            --query "Status" --output text)
-
-          echo "===== SSM stdout ====="
+          # 배포 결과 출력 (실패 원인 확인용)
           aws ssm get-command-invocation \
-            --region "${AWS_REGION}" \
-            --command-id "${COMMAND_ID}" \
-            --instance-id "${FRONTEND_INSTANCE_ID}" \
+            --command-id "${COMMAND_ID}" --instance-id "${FRONTEND_INSTANCE_ID}" \
             --query "StandardOutputContent" --output text
-
-          echo "===== SSM stderr ====="
           aws ssm get-command-invocation \
-            --region "${AWS_REGION}" \
-            --command-id "${COMMAND_ID}" \
-            --instance-id "${FRONTEND_INSTANCE_ID}" \
+            --command-id "${COMMAND_ID}" --instance-id "${FRONTEND_INSTANCE_ID}" \
             --query "StandardErrorContent" --output text
 
-          echo "배포 상태: ${STATUS}"
-          if [ "${STATUS}" != "Success" ]; then
-            echo "::error::배포 실패 (status=${STATUS})"
-            exit 1
-          fi
+          STATUS=$(aws ssm get-command-invocation \
+            --command-id "${COMMAND_ID}" --instance-id "${FRONTEND_INSTANCE_ID}" \
+            --query "Status" --output text)
+          [ "${STATUS}" = "Success" ] || { echo "::error::deploy failed (${STATUS})"; exit 1; }
